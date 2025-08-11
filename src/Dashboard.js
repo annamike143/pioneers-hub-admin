@@ -1,8 +1,10 @@
 // --- Dashboard.js (FINAL v2 - Full Functionality) ---
+import RoadmapEditor from './RoadmapEditor';
 import React, { useState, useEffect } from 'react';
 import { ref, onValue, push, set, remove, update } from 'firebase/database';
 import { database } from './firebase';
 import './Dashboard.css';
+import ServerStatusManager from './ServerStatusManager';
 
 const Dashboard = () => {
     const [pioneers, setPioneers] = useState([]);
@@ -78,6 +80,7 @@ const Dashboard = () => {
 
     return (
         <div className="dashboard-container">
+            <ServerStatusManager />
             {/* --- CAPACITY MANAGEMENT SECTION --- */}
             <div className="capacity-section">
                 <div className="capacity-header">
@@ -95,6 +98,7 @@ const Dashboard = () => {
                     <div className="capacity-stat"><p>Available Slots</p><span>{liveStatus.totalCapacity - liveStatus.totalPioneers}</span></div>
                 </div>
             </div>
+            <RoadmapEditor />
 
             {/* --- PIONEER MANAGEMENT SECTION --- */}
             <div className="dashboard-header">
