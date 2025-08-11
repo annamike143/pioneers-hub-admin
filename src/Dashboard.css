@@ -33,3 +33,16 @@ th { background-color: #f5f5f7; }
 .modal-actions { display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1rem; }
 .modal-actions button { padding: 0.75rem 1.5rem; border: none; border-radius: 8px; cursor: pointer; }
 .modal-actions button[type="submit"] { background-color: #00a9e0; color: white; }
+/* --- New Styles for Search and Freeze --- */
+.search-bar {
+    padding: 0.75rem;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    width: 300px; /* Adjust as needed */
+    margin-left: auto;
+    margin-right: 1rem;
+}
+
+.status-tag.frozen {
+    background-color: #6c757d; /* A neutral grey color */
+}
