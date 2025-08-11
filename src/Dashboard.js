@@ -1,7 +1,9 @@
-// --- Dashboard.js (FINAL v3 - Search & Freeze Functionality) ---
+// --- Dashboard.js (THE FINAL GRANDMASTER VERSION - All Tools Included) ---
 import React, { useState, useEffect, useMemo } from 'react';
 import { ref, onValue, push, set, remove, update } from 'firebase/database';
 import { database } from './firebase';
+import ServerStatusManager from './ServerStatusManager'; // <-- IMPORTING THE TOOL
+import RoadmapEditor from './RoadmapEditor';         // <-- IMPORTING THE TOOL
 import './Dashboard.css';
 
 const Dashboard = () => {
@@ -10,8 +12,6 @@ const Dashboard = () => {
     const [loading, setLoading] = useState(true);
     const [modal, setModal] = useState({ type: null, data: null });
     const [formData, setFormData] = useState({});
-    
-    // --- NEW: State for our search query ---
     const [searchQuery, setSearchQuery] = useState('');
 
     useEffect(() => {
@@ -23,7 +23,6 @@ const Dashboard = () => {
             const pioneersList = data ? Object.keys(data).map(key => ({ id: key, ...data[key] })).reverse() : [];
             setPioneers(pioneersList);
             
-            // --- UPGRADE: Count only active pioneers for the public status ---
             const activePioneers = pioneersList.filter(p => p.status !== 'FROZEN');
             set(ref(database, 'liveStatus/totalPioneers'), activePioneers.length);
         });
@@ -37,12 +36,11 @@ const Dashboard = () => {
         return () => { unsubPioneers(); unsubStatus(); };
     }, []);
 
-    // --- NEW: Memoized filtering for search functionality ---
     const filteredPioneers = useMemo(() => {
         if (!searchQuery) return pioneers;
         return pioneers.filter(p => 
-            p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            p.page.toLowerCase().includes(searchQuery.toLowerCase())
+            (p.name && p.name.toLowerCase().includes(searchQuery.toLowerCase())) ||
+            (p.page && p.page.toLowerCase().includes(searchQuery.toLowerCase()))
         );
     }, [pioneers, searchQuery]);
 
@@ -73,10 +71,10 @@ const Dashboard = () => {
     const handleCapacityUpdate = async (e) => {
         e.preventDefault();
         const newCapacity = parseInt(e.target.elements.capacity.value, 10);
-        if (!isNaN(newCapacity) && newCapacity >= pioneers.length) {
+        if (!isNaN(newCapacity) && newCapacity >= pioneers.filter(p=>p.status !== 'FROZEN').length) {
             await set(ref(database, 'liveStatus/totalCapacity'), newCapacity);
         } else {
-            alert("Invalid capacity.");
+            alert("Invalid capacity. Must be a number and greater than or equal to the current number of active pioneers.");
         }
     };
 
@@ -84,20 +82,30 @@ const Dashboard = () => {
 
     return (
         <div className="dashboard-container">
+            {/* --- OUR NEW TOOLS ARE HERE --- */}
+            <ServerStatusManager />
+            <RoadmapEditor />
+
             <div className="capacity-section">
-                 {/* ... capacity management code (unchanged) ... */}
+                <div className="capacity-header">
+                    <h2>Live Server Status</h2>
+                    <form onSubmit={handleCapacityUpdate}>
+                        <div className="capacity-form">
+                            <label>Update Total Capacity:</label>
+                            <input type="number" name="capacity" defaultValue={liveStatus.totalCapacity} />
+                            <button type="submit">Update</button>
+                        </div>
+                    </form>
+                </div>
+                <div className="capacity-stats">
+                    <div className="capacity-stat"><p>Active Pioneers / Capacity</p><span>{liveStatus.totalPioneers} / {liveStatus.totalCapacity}</span></div>
+                    <div className="capacity-stat"><p>Available Slots</p><span>{liveStatus.totalCapacity - liveStatus.totalPioneers}</span></div>
+                </div>
             </div>
             
             <div className="dashboard-header">
                 <h1>Pioneer Management</h1>
-                {/* --- NEW: Search Bar --- */}
-                <input 
-                    type="text"
-                    placeholder="Search pioneers..."
-                    className="search-bar"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                />
+                <input type="text" placeholder="Search pioneers..." className="search-bar" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
                 <button onClick={() => openModal('add')} className="add-pioneer-btn">+ Add New Pioneer</button>
             </div>
             
@@ -107,7 +115,6 @@ const Dashboard = () => {
                         <tr><th>Name</th><th>Business Page</th><th>Status</th><th>Actions</th></tr>
                     </thead>
                     <tbody>
-                        {/* --- UPGRADE: We now map over the filtered list --- */}
                         {filteredPioneers.map(pioneer => (
                             <tr key={pioneer.id}>
                                 <td>{pioneer.name}</td>
@@ -130,7 +137,6 @@ const Dashboard = () => {
                         <form onSubmit={handleSubmit}>
                             <input type="text" name="name" value={formData.name} onChange={handleFormChange} required />
                             <input type="text" name="page" value={formData.page} onChange={handleFormChange} required />
-                            {/* --- UPGRADE: Added "FROZEN" status --- */}
                             <select name="status" value={formData.status} onChange={handleFormChange}>
                                 <option value="PIONEER">Pioneer (Free)</option>
                                 <option value="PARTNER">Partner (Paid)</option>
