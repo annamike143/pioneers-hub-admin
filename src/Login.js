@@ -12,12 +12,56 @@ const Login = () => {
     const handleLogin = async (e) => {
         e.preventDefault();
         setError('');
+        
+        console.log('Attempting login with:', { email, passwordLength: password.length });
+        console.log('Firebase config check:', {
+            hasApiKey: !!process.env.REACT_APP_FIREBASE_API_KEY,
+            authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN,
+            projectId: process.env.REACT_APP_FIREBASE_PROJECT_ID
+        });
+        
         try {
-            await signInWithEmailAndPassword(auth, email, password);
+            const userCredential = await signInWithEmailAndPassword(auth, email, password);
+            console.log('Login successful:', userCredential.user.email);
             // The parent component will handle the successful login
         } catch (err) {
-            setError('Failed to log in. Please check your email and password.');
-            console.error("Login Error:", err);
+            console.error("Login Error Details:", {
+                code: err.code,
+                message: err.message,
+                customData: err.customData
+            });
+            
+            // Provide specific error messages
+            let errorMessage = 'Login failed. ';
+            switch (err.code) {
+                case 'auth/user-not-found':
+                    errorMessage += 'No account found with this email address.';
+                    break;
+                case 'auth/wrong-password':
+                    errorMessage += 'Incorrect password.';
+                    break;
+                case 'auth/invalid-email':
+                    errorMessage += 'Invalid email address format.';
+                    break;
+                case 'auth/user-disabled':
+                    errorMessage += 'This account has been disabled.';
+                    break;
+                case 'auth/too-many-requests':
+                    errorMessage += 'Too many failed attempts. Please try again later.';
+                    break;
+                case 'auth/network-request-failed':
+                    errorMessage += 'Network error. Please check your connection.';
+                    break;
+                case 'auth/invalid-credential':
+                    errorMessage += 'Invalid credentials provided.';
+                    break;
+                case 'auth/api-key-expired':
+                    errorMessage += 'API key expired. Configuration has been updated - please try again.';
+                    break;
+                default:
+                    errorMessage += `Error: ${err.code} - ${err.message}`;
+            }
+            setError(errorMessage);
         }
     };
 
