@@ -10,30 +10,60 @@ const Dashboard = () => {
     const [pioneers, setPioneers] = useState([]);
     const [liveStatus, setLiveStatus] = useState({ totalPioneers: 0, totalCapacity: 100 });
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
     const [modal, setModal] = useState({ type: null, data: null });
     const [formData, setFormData] = useState({});
     const [searchQuery, setSearchQuery] = useState('');
 
     useEffect(() => {
+        console.log('Dashboard: Starting Firebase connection...');
         const pioneersRef = ref(database, 'pioneers');
         const statusRef = ref(database, 'liveStatus');
 
+        // Set a timeout to prevent infinite loading
+        const loadingTimeout = setTimeout(() => {
+            console.log('Dashboard: Loading timeout reached');
+            setError('Failed to load data from Firebase. Please check your connection and try again.');
+            setLoading(false);
+        }, 10000); // 10 second timeout
+
         const unsubPioneers = onValue(pioneersRef, (snapshot) => {
+            console.log('Firebase: Pioneers data received', snapshot.exists());
             const data = snapshot.val();
+            console.log('Firebase: Pioneers raw data', data);
             const pioneersList = data ? Object.keys(data).map(key => ({ id: key, ...data[key] })).reverse() : [];
+            console.log('Firebase: Processed pioneers list', pioneersList);
             setPioneers(pioneersList);
             
             const activePioneers = pioneersList.filter(p => p.status !== 'FROZEN');
             set(ref(database, 'liveStatus/totalPioneers'), activePioneers.length);
+            clearTimeout(loadingTimeout);
+        }, (error) => {
+            console.error('Firebase: Error reading pioneers data', error);
+            setError(`Firebase Error: ${error.message}`);
+            setLoading(false);
+            clearTimeout(loadingTimeout);
         });
 
         const unsubStatus = onValue(statusRef, (snapshot) => {
+            console.log('Firebase: Status data received', snapshot.exists());
             const data = snapshot.val();
+            console.log('Firebase: Status raw data', data);
             if (data) setLiveStatus(data);
             setLoading(false);
+            clearTimeout(loadingTimeout);
+        }, (error) => {
+            console.error('Firebase: Error reading status data', error);
+            setError(`Firebase Error: ${error.message}`);
+            setLoading(false);
+            clearTimeout(loadingTimeout);
         });
 
-        return () => { unsubPioneers(); unsubStatus(); };
+        return () => { 
+            clearTimeout(loadingTimeout);
+            unsubPioneers(); 
+            unsubStatus(); 
+        };
     }, []);
 
     const filteredPioneers = useMemo(() => {
@@ -78,7 +108,9 @@ const Dashboard = () => {
         }
     };
 
-    if (loading) return <div>Loading Pioneer Data...</div>;
+    if (loading) return <div>Loading Pioneer Data... <br/><small>This may take a few seconds. If this persists, check browser console for errors.</small></div>;
+    
+    if (error) return <div style={{color: 'red', padding: '20px'}}>Error: {error}</div>;
 
     return (
         <div className="dashboard-container">

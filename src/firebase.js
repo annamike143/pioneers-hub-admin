@@ -11,6 +11,8 @@ console.log('Environment variables:', {
   projectId: process.env.REACT_APP_FIREBASE_PROJECT_ID ? 'Set' : 'Missing',
 });
 
+console.log('Actual API Key (first 10 chars):', process.env.REACT_APP_FIREBASE_API_KEY?.substring(0, 10));
+
 // This code now securely reads your keys from the .env.local file
 const firebaseConfig = {
   apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
@@ -22,6 +24,15 @@ const firebaseConfig = {
   appId: process.env.REACT_APP_FIREBASE_APP_ID
 };
 
+console.log('Firebase Config:', {
+  ...firebaseConfig,
+  apiKey: firebaseConfig.apiKey ? firebaseConfig.apiKey.substring(0, 10) + '...' : 'Missing'
+});
+
 const app = initializeApp(firebaseConfig);
 export const database = getDatabase(app);
 export const auth = getAuth(app);
+
+console.log('Firebase initialized successfully');
+console.log('Database instance:', database);
+console.log('Auth instance:', auth);
