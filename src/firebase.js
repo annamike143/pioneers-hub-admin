@@ -3,6 +3,14 @@ import { initializeApp } from "firebase/app";
 import { getDatabase } from "firebase/database";
 import { getAuth } from "firebase/auth";
 
+// Debug environment variables
+console.log('Environment variables:', {
+  apiKey: process.env.REACT_APP_FIREBASE_API_KEY ? 'Set' : 'Missing',
+  authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN ? 'Set' : 'Missing',
+  databaseURL: process.env.REACT_APP_FIREBASE_DATABASE_URL ? 'Set' : 'Missing',
+  projectId: process.env.REACT_APP_FIREBASE_PROJECT_ID ? 'Set' : 'Missing',
+});
+
 // This code now securely reads your keys from the .env.local file
 const firebaseConfig = {
   apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
